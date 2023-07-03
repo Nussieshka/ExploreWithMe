@@ -12,7 +12,7 @@ import java.util.List;
 @AllArgsConstructor
 public class MainService {
 
-    private MainRepository mainRepository;
+    private final MainRepository mainRepository;
 
     public void hit(Request request) {
         if (request == null) {
