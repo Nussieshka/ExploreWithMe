@@ -1,15 +1,50 @@
 version: '3.1'
 services:
   stats-server:
+    container_name: stats-server
+    restart: on-failure
+    build: "./stats-service"
     ports:
       - "9090:9090"
+    environment:
+      - DB_NAME=explore_with_me_stats
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=super-secret-password
+      - DB_HOST=stats-db
+      - DB_PORT=5432
+    depends_on:
+      - stats-db
 
   stats-db:
+    container_name: stats-db
     image: postgres:14-alpine
+    ports:
+      - "6541:5432"
+    environment:
+      - POSTGRES_DB=explore_with_me_stats
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=super-secret-password
 
   ewm-service:
+    container_name: ewm-service
+    build: "./main-service"
     ports:
       - "8080:8080"
+    environment:
+      - DB_NAME=explore_with_me
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=super-secret-password
+      - DB_HOST=ewm-db
+      - DB_PORT=5432
+    depends_on:
+      - ewm-db
 
   ewm-db:
+    container_name: ewm-db
     image: postgres:14-alpine
+    ports:
+      - "6542:5432"
+    environment:
+      - POSTGRES_DB=explore_with_me
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=super-secret-password
