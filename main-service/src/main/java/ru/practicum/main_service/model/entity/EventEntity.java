@@ -1,7 +1,7 @@
 package ru.practicum.main_service.model.entity;
 
-import lombok.Data;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import ru.practicum.main_service.model.EventState;
 
@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "events")
-@Data
+@NoArgsConstructor
 @Getter
 @Setter
 public class EventEntity {

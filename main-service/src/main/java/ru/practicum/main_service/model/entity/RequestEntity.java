@@ -1,6 +1,8 @@
 package ru.practicum.main_service.model.entity;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import ru.practicum.main_service.model.RequestStatus;
 
 import javax.persistence.*;
@@ -8,7 +10,9 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "requests")
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
 public class RequestEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

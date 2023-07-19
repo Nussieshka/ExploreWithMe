@@ -1,12 +1,16 @@
 package ru.practicum.main_service.model.entity;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import javax.persistence.*;
 
 @Entity
 @Table(name = "categories")
-@Data
+@NoArgsConstructor
+@Getter
+@Setter
 public class CategoryEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
