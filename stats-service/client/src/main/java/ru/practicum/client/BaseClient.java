@@ -18,32 +18,32 @@ public class BaseClient {
         this.rest = rest;
     }
 
-    protected ResponseEntity<Object> get(String path, @Nullable Parameters parameters) {
-        return makeAndSendRequest(HttpMethod.GET, path, parameters, null);
+    protected <V> ResponseEntity<V> get(String path, @Nullable Parameters parameters, Class<V> clazz) {
+        return makeAndSendRequest(HttpMethod.GET, path, parameters, null, clazz);
     }
 
-    protected <T> ResponseEntity<Object> post(String path, T body) {
-        return post(path, null, body);
+    protected <T, V> ResponseEntity<V> post(String path, T body, Class<V> clazz) {
+        return post(path, null, body, clazz);
     }
 
 
-    protected <T> ResponseEntity<Object> post(String path, @Nullable Parameters parameters, T body) {
-        return makeAndSendRequest(HttpMethod.POST, path, parameters, body);
+    protected <T, V> ResponseEntity<V> post(String path, @Nullable Parameters parameters, T body, Class<V> clazz) {
+        return makeAndSendRequest(HttpMethod.POST, path, parameters, body, clazz);
     }
 
-    private <T> ResponseEntity<Object> makeAndSendRequest(HttpMethod method, String path,
-                                                          @Nullable Parameters parameters, @Nullable T body) {
+    private <T, V> ResponseEntity<V> makeAndSendRequest(HttpMethod method, String path,
+                                                          @Nullable Parameters parameters, @Nullable T body, Class<V> clazz) {
         HttpEntity<T> requestEntity = new HttpEntity<>(body, defaultHeaders());
 
-        ResponseEntity<Object> shareitServerResponse;
+        ResponseEntity<V> shareitServerResponse;
         try {
             if (parameters != null && !parameters.isEmpty()) {
-                shareitServerResponse = rest.exchange(path, method, requestEntity, Object.class, parameters.get());
+                shareitServerResponse = rest.exchange(path, method, requestEntity, clazz, parameters.get());
             } else {
-                shareitServerResponse = rest.exchange(path, method, requestEntity, Object.class);
+                shareitServerResponse = rest.exchange(path, method, requestEntity, clazz);
             }
         } catch (HttpStatusCodeException e) {
-            return ResponseEntity.status(e.getStatusCode()).body(e.getResponseBodyAsByteArray());
+            return ResponseEntity.status(e.getStatusCode()).body(null);
         }
         return prepareGatewayResponse(shareitServerResponse);
     }
@@ -55,7 +55,7 @@ public class BaseClient {
         return headers;
     }
 
-    private static ResponseEntity<Object> prepareGatewayResponse(ResponseEntity<Object> response) {
+    private static <V> ResponseEntity<V> prepareGatewayResponse(ResponseEntity<V> response) {
         if (response.getStatusCode().is2xxSuccessful()) {
             return response;
         }

@@ -1,7 +1,9 @@
 package ru.practicum.service;
 
 import lombok.AllArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 import ru.practicum.library.Request;
 import ru.practicum.library.Stats;
 
@@ -27,7 +29,7 @@ public class MainService {
     public List<Stats> stats(LocalDateTime start, LocalDateTime end, List<String> uris, boolean isUnique) {
 
         if (start.isAfter(end)) {
-            throw new RuntimeException("Start date cannot be after end date");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Start date cannot be after end date");
         }
 
         if (uris == null || uris.isEmpty()) {
