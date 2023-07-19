@@ -1,6 +1,7 @@
 package ru.practicum.main_service.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,10 +16,11 @@ import java.util.List;
 @AllArgsConstructor
 @Data
 public class ApiError {
-    private List<StackTraceElement> errors;
-    private String message;
-    private String reason;
     private HttpStatus status;
+    private String reason;
+    private String message;
+
+    private List<StackTraceElement> errors;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime timestamp;

@@ -15,7 +15,7 @@ public class RequestEntity {
     private Long id;
 
     @Column(name = "created_on")
-    private LocalDateTime created;
+    private LocalDateTime created = LocalDateTime.now();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "event_id")
@@ -25,7 +25,7 @@ public class RequestEntity {
     @JoinColumn(name = "requester_id")
     private UserEntity user;
 
-    @Column(name = "category_status")
+    @Column(name = "status")
     @Enumerated(EnumType.ORDINAL)
     private RequestStatus status;
 }

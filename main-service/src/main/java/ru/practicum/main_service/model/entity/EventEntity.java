@@ -1,6 +1,8 @@
 package ru.practicum.main_service.model.entity;
 
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import ru.practicum.main_service.model.EventState;
 
 import javax.persistence.*;
@@ -9,6 +11,8 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "events")
 @Data
+@Getter
+@Setter
 public class EventEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,10 +26,10 @@ public class EventEntity {
     private CategoryEntity category;
 
     @Column(name = "confirmed_requests")
-    private Long confirmedRequests;
+    private Long confirmedRequests = 0L;
 
     @Column(name = "created_on")
-    private LocalDateTime createdOn;
+    private LocalDateTime createdOn = LocalDateTime.now();
 
     @Column(name = "description")
     private String description;
@@ -53,11 +57,11 @@ public class EventEntity {
     private LocalDateTime publishedOn;
 
     @Column(name = "request_moderation")
-    private Boolean requestModeration = true;
+    private Boolean requestModeration;
 
     @Column(name = "state")
     @Enumerated(EnumType.ORDINAL)
-    private EventState state;
+    private EventState state = EventState.PENDING;
 
     @Column(name = "title", nullable = false)
     private String title;

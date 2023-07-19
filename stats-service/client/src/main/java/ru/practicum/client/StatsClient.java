@@ -9,10 +9,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 import ru.practicum.Parameters;
 import ru.practicum.library.Request;
+import ru.practicum.library.Stats;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class StatsClient extends BaseClient {
@@ -27,11 +30,11 @@ public class StatsClient extends BaseClient {
         );
     }
 
-    public ResponseEntity<Object> hit(String app, String uri, String ip, LocalDateTime timestamp) {
-        return post("/hit", new Request(null, app, uri, ip, timestamp));
+    public ResponseEntity<Void> hit(String app, String uri, String ip, LocalDateTime timestamp) {
+        return post("/hit", new Request(null, app, uri, ip, timestamp), Void.class);
     }
 
-    public ResponseEntity<Object> stats(LocalDateTime start, LocalDateTime end, List<String> uris, Boolean isUnique) {
+    public List<Stats> stats(LocalDateTime start, LocalDateTime end, List<String> uris, Boolean isUnique) {
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         Parameters parameters = Parameters.getInstance()
                 .addParameter("start", start.format(dateTimeFormatter))
@@ -42,7 +45,12 @@ public class StatsClient extends BaseClient {
             parameters.addParameter("uris", uris);
         }
 
-        return get(parameters.getPath("/stats"), parameters);
+        return Arrays.asList(Objects.requireNonNull(
+                get(parameters.getPath("/stats"), parameters, Stats[].class).getBody()));
     }
 
+    public List<Stats> stats(List<String> uris, Boolean isUnique) {
+        return stats(LocalDateTime.of(1984, 1, 1, 0, 0),
+                LocalDateTime.of(2222, 2, 2, 2, 2), uris, isUnique);
+    }
 }

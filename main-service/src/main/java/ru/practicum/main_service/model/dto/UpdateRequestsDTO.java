@@ -5,12 +5,18 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import ru.practicum.main_service.model.RequestStatus;
 
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import java.util.List;
 
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
 public class UpdateRequestsDTO {
-    private List<Long> requestsIds;
-    private RequestStatus requestStatus;
+
+    @NotEmpty
+    private List<Long> requestIds;
+
+    @NotNull
+    private RequestStatus status;
 }

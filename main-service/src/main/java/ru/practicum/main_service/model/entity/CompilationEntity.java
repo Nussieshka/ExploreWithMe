@@ -19,7 +19,7 @@ public class CompilationEntity {
     @Column(name = "is_pinned")
     private Boolean pinned;
 
-    @ManyToMany
+    @ManyToMany(cascade = CascadeType.DETACH)
     @JoinTable(
             name = "events_compilations",
             joinColumns = @JoinColumn(name = "compilation_id"),
