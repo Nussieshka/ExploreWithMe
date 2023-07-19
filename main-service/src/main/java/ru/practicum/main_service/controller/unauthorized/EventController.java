@@ -20,6 +20,7 @@ import java.util.List;
 public class EventController {
 
     private final EventService service;
+
     @GetMapping
     public ResponseEntity<List<EventDTO>> getEvents(@RequestParam(required = false) String text,
                                                     @RequestParam(required = false) List<Long> categories,

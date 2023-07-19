@@ -47,8 +47,8 @@ public class RequestServiceImpl implements RequestService {
         Optional<RequestEntity> optionalRequest = requestRepository.findByUserIdAndEventId(userId, eventId);
 
         if (optionalRequest.isPresent() && optionalRequest.get().getStatus() != RequestStatus.CANCELED) {
-            throw MessageResponseStatusException.
-                    getConflictException("The request is already exists for event with id=" + eventId);
+            throw MessageResponseStatusException
+                    .getConflictException("The request is already exists for event with id=" + eventId);
         }
 
         EventEntity event = eventRepository.findById(eventId).orElseThrow(
