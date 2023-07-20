@@ -6,8 +6,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.main_service.model.SortType;
-import ru.practicum.main_service.model.dto.EventDTO;
-import ru.practicum.main_service.model.dto.FullEventDTO;
+import ru.practicum.main_service.model.dto.*;
 import ru.practicum.main_service.service.EventService;
 
 import javax.servlet.http.HttpServletRequest;
@@ -42,7 +41,25 @@ public class EventController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<FullEventDTO> getEvent(@PathVariable Long id, HttpServletRequest request) {
+    public ResponseEntity<EventDTOWithComment> getEvent(@PathVariable Long id, HttpServletRequest request) {
         return ResponseEntity.ok(service.getEvent(id, request.getRemoteAddr(), request.getRequestURI()));
+    }
+
+    @GetMapping("/{eventId}/comments")
+    public ResponseEntity<List<CommentDTO>> getComments(@PathVariable Long eventId,
+                                                           @RequestParam(defaultValue = "0") Integer from,
+                                                           @RequestParam(defaultValue = "10") Integer size,
+                                                           HttpServletRequest request) {
+        return ResponseEntity.ok(service.getComments(eventId, from, size,
+                request.getRemoteAddr(), request.getRequestURI()));
+    }
+
+    @GetMapping("/comments/{commentId}")
+    public ResponseEntity<List<ReplyDTO>> getReplies(@PathVariable Long commentId,
+                                                          @RequestParam(defaultValue = "0") Integer from,
+                                                          @RequestParam(defaultValue = "10") Integer size,
+                                                          HttpServletRequest request) {
+        return ResponseEntity.ok(service.getReplies(commentId, from, size,
+                request.getRemoteAddr(), request.getRequestURI()));
     }
 }

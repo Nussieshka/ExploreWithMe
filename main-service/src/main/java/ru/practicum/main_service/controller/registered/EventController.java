@@ -34,7 +34,7 @@ public class EventController {
     }
 
     @GetMapping("/{eventId}")
-    public ResponseEntity<FullEventDTO> getEvent(@PathVariable Long userId, @PathVariable Long eventId) {
+    public ResponseEntity<EventDTOWithComment> getEvent(@PathVariable Long userId, @PathVariable Long eventId) {
         return ResponseEntity.ok(service.getFullEvent(userId, eventId));
     }
 
@@ -56,5 +56,59 @@ public class EventController {
                                               @PathVariable Long eventId,
                                               @RequestBody @Valid UpdateRequestsDTO requests) {
         return ResponseEntity.ok(service.confirmRequests(userId, eventId, requests));
+    }
+
+    @PostMapping("/{eventId}/comments")
+    public ResponseEntity<CommentDTO> addComment(@PathVariable Long userId,
+                                                            @PathVariable Long eventId,
+                                                            @RequestBody @Valid CreatedCommentDTO commentDTO) {
+        return ResponseEntity.ok(service.addCommentToEvent(userId, eventId, commentDTO));
+    }
+
+    @PatchMapping("/comments/{commentId}/edit")
+    public ResponseEntity<CommentDTO> editComment(@PathVariable Long userId,
+                                                  @PathVariable Long commentId,
+                                                  @RequestBody @Valid CreatedCommentDTO commentDTO) {
+        return ResponseEntity.ok(service.editComment(userId, commentId, commentDTO));
+    }
+
+    @PostMapping("/comments/{commentId}/like")
+    public ResponseEntity<CommentDTO> likeComment(@PathVariable Long userId,
+                                                  @PathVariable Long commentId) {
+        return ResponseEntity.ok(service.likeComment(userId, commentId));
+    }
+
+    @DeleteMapping("/comments/{commentId}")
+    public ResponseEntity<CommentDTO> removeComment(@PathVariable Long userId,
+                                                  @PathVariable Long commentId) {
+        service.removeComment(userId, commentId);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+    @PostMapping("/comments/{commentId}/reply")
+    public ResponseEntity<ReplyDTO> addReply(@PathVariable Long userId,
+                                                            @PathVariable Long commentId,
+                                                            @RequestBody @Valid CreatedCommentDTO commentDTO) {
+        return ResponseEntity.ok(service.addReplyToComment(userId, commentId, commentDTO));
+    }
+
+    @PatchMapping("/replies/{replyId}/edit")
+    public ResponseEntity<ReplyDTO> editReply(@PathVariable Long userId,
+                                                  @PathVariable Long replyId,
+                                                  @RequestBody @Valid CreatedCommentDTO commentDTO) {
+        return ResponseEntity.ok(service.editReply(userId, replyId, commentDTO));
+    }
+
+    @PostMapping("/replies/{replyId}/like")
+    public ResponseEntity<ReplyDTO> likeReply(@PathVariable Long userId,
+                                                  @PathVariable Long replyId) {
+        return ResponseEntity.ok(service.likeReply(userId, replyId));
+    }
+
+    @DeleteMapping("/replies/{replyId}")
+    public ResponseEntity<CommentDTO> removeReply(@PathVariable Long userId,
+                                                  @PathVariable Long replyId) {
+        service.removeReply(userId, replyId);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }

@@ -34,7 +34,7 @@ public class FullEventDTO {
     private Long id;
 
     @NotNull
-    private EventUserDTO initiator;
+    private ShortUserDTO initiator;
 
     @NotNull
     private Location location;

@@ -13,23 +13,19 @@ import ru.practicum.main_service.model.RequestStatus;
 import ru.practicum.main_service.model.SortType;
 import ru.practicum.main_service.model.StateAction;
 import ru.practicum.main_service.model.dto.*;
-import ru.practicum.main_service.model.entity.CategoryEntity;
-import ru.practicum.main_service.model.entity.EventEntity;
-import ru.practicum.main_service.model.entity.RequestEntity;
-import ru.practicum.main_service.model.entity.UserEntity;
+import ru.practicum.main_service.model.entity.*;
+import ru.practicum.main_service.model.mapper.CommentMapper;
 import ru.practicum.main_service.model.mapper.EventMapper;
 import ru.practicum.main_service.model.mapper.EventUpdateMapper;
 import ru.practicum.main_service.model.mapper.RequestMapper;
-import ru.practicum.main_service.repository.CategoryRepository;
-import ru.practicum.main_service.repository.RequestRepository;
-import ru.practicum.main_service.repository.UserRepository;
+import ru.practicum.main_service.repository.*;
 import ru.practicum.main_service.service.EventService;
-import ru.practicum.main_service.repository.EventRepository;
 import ru.practicum.main_service.util.MessageResponseStatusException;
 import ru.practicum.main_service.util.Util;
 
 import javax.transaction.Transactional;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -43,6 +39,8 @@ public class EventServiceImpl implements EventService {
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
     private final RequestRepository requestRepository;
+    private final CommentRepository commentRepository;
+    private final ReplyRepository replyRepository;
 
     private final StatsClient statsClient;
 
@@ -63,7 +61,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public FullEventDTO adminEditEvent(Long eventId, UpdateEventDTO event) {
+    public EventDTOWithComment adminEditEvent(Long eventId, UpdateEventDTO event) {
         if (eventId == null) {
             throw MessageResponseStatusException.getNullIdException();
         }
@@ -138,7 +136,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public FullEventDTO getFullEvent(Long userId, Long eventId) {
+    public EventDTOWithComment getFullEvent(Long userId, Long eventId) {
         if (userId == null || eventId == null) {
             throw MessageResponseStatusException.getNullIdException();
         }
@@ -146,11 +144,13 @@ public class EventServiceImpl implements EventService {
         EventEntity event = eventRepository.findByIdAndInitiatorId(eventId, userId).orElseThrow(
                 () -> MessageResponseStatusException.getNotFoundException("Event", eventId));
 
-        return EventMapper.INSTANCE.toFullEventDTO(event);
+
+        CommentEntity comment = getFirstCommentOrNull(eventId);
+        return EventMapper.INSTANCE.toCommentEventDTO(event, CommentMapper.INSTANCE.toCommentDTO(comment));
     }
 
     @Override
-    public FullEventDTO userEditEvent(Long userId, Long eventId, UpdateEventDTO event) {
+    public EventDTOWithComment userEditEvent(Long userId, Long eventId, UpdateEventDTO event) {
         if (userId == null) {
             throw MessageResponseStatusException.getNullIdException();
         }
@@ -275,7 +275,7 @@ public class EventServiceImpl implements EventService {
 
     @Transactional
     @Override
-    public FullEventDTO getEvent(Long id, String clientIp, String endpointPath) {
+    public EventDTOWithComment getEvent(Long id, String clientIp, String endpointPath) {
         if (id == null) {
             throw MessageResponseStatusException.getNullIdException();
         }
@@ -297,10 +297,12 @@ public class EventServiceImpl implements EventService {
             event.setViews(views);
             eventRepository.save(event);
         }
-        return EventMapper.INSTANCE.toFullEventDTO(event);
+
+        CommentEntity comment = getFirstCommentOrNull(event.getId());
+        return EventMapper.INSTANCE.toCommentEventDTO(event, CommentMapper.INSTANCE.toCommentDTO(comment));
     }
 
-    private FullEventDTO getUpdatedEvent(UpdateEventDTO event, EventEntity eventEntity) {
+    private EventDTOWithComment getUpdatedEvent(UpdateEventDTO event, EventEntity eventEntity) {
         Long categoryId = event.getCategory();
 
         CategoryEntity category = null;
@@ -312,7 +314,9 @@ public class EventServiceImpl implements EventService {
 
         EventUpdateMapper.INSTANCE.updateEventEntityFromUpdateEventDTO(event, eventEntity, category);
 
-        return EventMapper.INSTANCE.toFullEventDTO(eventRepository.save(eventEntity));
+        CommentEntity comment = getFirstCommentOrNull(eventEntity.getId());
+        return EventMapper.INSTANCE.toCommentEventDTO(eventRepository.save(eventEntity),
+                CommentMapper.INSTANCE.toCommentDTO(comment));
     }
 
     private void setStatus(List<RequestEntity> requests, RequestStatus status) {
@@ -323,5 +327,181 @@ public class EventServiceImpl implements EventService {
              }
              request.setStatus(status);
          }
+    }
+
+    @Override
+    public CommentDTO addCommentToEvent(Long userId, Long eventId, CreatedCommentDTO commentDTO) {
+        if (userId == null || eventId == null) {
+            throw MessageResponseStatusException.getNullIdException();
+        }
+
+        UserEntity user = userRepository.findById(userId).orElseThrow(
+                () -> MessageResponseStatusException.getNotFoundException("User", userId));
+
+        EventEntity event = eventRepository.findById(eventId).orElseThrow(
+                () -> MessageResponseStatusException.getNotFoundException("Event", eventId));
+
+        EventState state = event.getState();
+        if (event.getState() != EventState.PUBLISHED) {
+            throw MessageResponseStatusException.getConflictException("The event not published. Value: " + state);
+        }
+
+        return CommentMapper.INSTANCE.toCommentDTO(
+                commentRepository.save(CommentMapper.INSTANCE.toCommentEntity(commentDTO, event, user)));
+    }
+
+    @Override
+    public CommentDTO editComment(Long userId, Long commentId, CreatedCommentDTO commentDTO) {
+        if (userId == null || commentId == null) {
+            throw MessageResponseStatusException.getNullIdException();
+        }
+
+        CommentEntity comment = commentRepository.findByIdAndUserId(commentId, userId).orElseThrow(
+                () -> MessageResponseStatusException.getNotFoundException("Comment", commentId));
+
+        comment.setMessage(commentDTO.getMessage());
+        comment.setEditedOn(LocalDateTime.now());
+
+        return CommentMapper.INSTANCE.toCommentDTO(commentRepository.save(comment));
+    }
+
+    @Override
+    public CommentDTO likeComment(Long userId, Long commentId) {
+        if (userId == null || commentId == null) {
+            throw MessageResponseStatusException.getNullIdException();
+        }
+
+        UserEntity user = userRepository.findById(userId).orElseThrow(
+                () -> MessageResponseStatusException.getNotFoundException("User", userId));
+
+        CommentEntity comment = commentRepository.findById(commentId).orElseThrow(
+                () -> MessageResponseStatusException.getNotFoundException("Comment", commentId));
+
+        List<UserEntity> likes = new ArrayList<>(comment.getUserLikes());
+
+        if (likes.remove(user)) {
+            comment.setUserLikes(likes);
+            return CommentMapper.INSTANCE.toCommentDTO(commentRepository.save(comment));
+        }
+
+        likes.add(user);
+        comment.setUserLikes(likes);
+
+        return CommentMapper.INSTANCE.toCommentDTO(commentRepository.save(comment));
+    }
+
+    @Override
+    public void removeComment(Long userId, Long commentId) {
+        if (userId == null || commentId == null) {
+            throw MessageResponseStatusException.getNullIdException();
+        }
+
+        CommentEntity comment = commentRepository.findByIdAndUserId(commentId, userId).orElseThrow(
+                () -> MessageResponseStatusException.getNotFoundException("Comment", commentId));
+
+        commentRepository.delete(comment);
+    }
+
+    @Transactional
+    @Override
+    public ReplyDTO addReplyToComment(Long userId, Long commentId, CreatedCommentDTO replyDTO) {
+        if (userId == null || commentId == null) {
+            throw MessageResponseStatusException.getNullIdException();
+        }
+
+        CommentEntity comment = commentRepository.findById(commentId).orElseThrow(
+                () -> MessageResponseStatusException.getNotFoundException("Comment", commentId));
+
+        UserEntity user = userRepository.findById(userId).orElseThrow(
+                () -> MessageResponseStatusException.getNotFoundException("User", userId));
+
+        ReplyEntity reply = CommentMapper.INSTANCE.toReplyEntity(replyDTO, comment, user);
+        comment.getReplies().add(reply);
+
+        return CommentMapper.INSTANCE.toReplyDTO(replyRepository.save(reply));
+    }
+
+    @Override
+    public ReplyDTO editReply(Long userId, Long replyId, CreatedCommentDTO commentDTO) {
+        if (userId == null || replyId == null) {
+            throw MessageResponseStatusException.getNullIdException();
+        }
+
+        ReplyEntity reply = replyRepository.findByIdAndUserId(replyId, userId).orElseThrow(
+                () -> MessageResponseStatusException.getNotFoundException("Reply", replyId));
+
+        reply.setMessage(commentDTO.getMessage());
+        reply.setEditedOn(LocalDateTime.now());
+
+        return CommentMapper.INSTANCE.toReplyDTO(replyRepository.save(reply));
+    }
+
+    @Override
+    public ReplyDTO likeReply(Long userId, Long replyId) {
+        if (userId == null || replyId == null) {
+            throw MessageResponseStatusException.getNullIdException();
+        }
+
+        UserEntity user = userRepository.findById(userId).orElseThrow(
+                () -> MessageResponseStatusException.getNotFoundException("User", userId));
+
+        ReplyEntity reply = replyRepository.findById(replyId).orElseThrow(
+                () -> MessageResponseStatusException.getNotFoundException("Reply", replyId));
+
+        List<UserEntity> likes = reply.getUserLikes();
+
+        if (likes.remove(user)) {
+            return CommentMapper.INSTANCE.toReplyDTO(replyRepository.save(reply));
+        }
+
+        likes.add(user);
+
+        return CommentMapper.INSTANCE.toReplyDTO(replyRepository.save(reply));
+    }
+
+    @Override
+    public void removeReply(Long userId, Long replyId) {
+        if (userId == null || replyId == null) {
+            throw MessageResponseStatusException.getNullIdException();
+        }
+
+        ReplyEntity reply = replyRepository.findByIdAndUserId(replyId, userId).orElseThrow(
+                () -> MessageResponseStatusException.getNotFoundException("Reply", replyId));
+
+
+        replyRepository.delete(reply);
+    }
+
+    @Override
+    public List<ReplyDTO> getReplies(Long commentId, Integer from, Integer size, String clientIp, String endpointPath) {
+        if (commentId == null) {
+            throw MessageResponseStatusException.getNullIdException();
+        }
+
+        statsClient.hit(ExploreWithMe.APP_NAME, endpointPath, clientIp, LocalDateTime.now());
+
+        return CommentMapper.INSTANCE.toReplyDTO(
+                replyRepository.findAllByCommentIdOrderByCreatedOnAsc(commentId, PageRequest.of(from / size, size)));
+    }
+
+    @Override
+    public List<CommentDTO> getComments(Long eventId, Integer from, Integer size, String clientIp, String endpointPath) {
+        if (eventId == null) {
+            throw MessageResponseStatusException.getNullIdException();
+        }
+
+        statsClient.hit(ExploreWithMe.APP_NAME, endpointPath, clientIp, LocalDateTime.now());
+
+        return CommentMapper.INSTANCE.toCommentDTO(
+                commentRepository.findAllByEventIdOrderByUserLikesDesc(eventId, PageRequest.of(from / size, size)));
+    }
+
+    private CommentEntity getFirstCommentOrNull(Long eventId) {
+        List<CommentEntity> list = commentRepository.findAllByEventIdOrderByUserLikesDesc(eventId,
+                PageRequest.of(0, 1)).toList();
+        if (list.isEmpty()) {
+            return null;
+        }
+        return list.get(0);
     }
 }
