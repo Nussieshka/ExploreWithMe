@@ -47,3 +47,31 @@ CREATE TABLE IF NOT EXISTS events_compilations(
     event_id BIGINT NOT NULL REFERENCES events(id),
     compilation_id BIGINT NOT NULL REFERENCES compilations(id)
 );
+
+CREATE TABLE IF NOT EXISTS comments(
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    message TEXT,
+    user_id BIGINT REFERENCES users(id),
+    created_on TIMESTAMP WITHOUT TIME ZONE,
+    edited_on TIMESTAMP WITHOUT TIME ZONE,
+    event_id BIGINT REFERENCES events(id)
+);
+
+CREATE TABLE IF NOT EXISTS replies(
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    message TEXT,
+    user_id BIGINT REFERENCES users(id),
+    created_on TIMESTAMP WITHOUT TIME ZONE,
+    edited_on TIMESTAMP WITHOUT TIME ZONE,
+    comment_id BIGINT REFERENCES comments(id)
+);
+
+CREATE TABLE IF NOT EXISTS users_replies_likes(
+    user_id BIGINT NOT NULL REFERENCES users(id),
+    reply_id BIGINT NOT NULL REFERENCES replies(id)
+);
+
+CREATE TABLE IF NOT EXISTS users_comments_likes(
+    user_id BIGINT NOT NULL REFERENCES users(id),
+    comment_id BIGINT NOT NULL REFERENCES comments(id)
+);

@@ -34,7 +34,7 @@ public class EventController {
     }
 
     @GetMapping("/{eventId}")
-    public ResponseEntity<FullEventDTO> getEvent(@PathVariable Long userId, @PathVariable Long eventId) {
+    public ResponseEntity<EventDTOWithComment> getEvent(@PathVariable Long userId, @PathVariable Long eventId) {
         return ResponseEntity.ok(service.getFullEvent(userId, eventId));
     }
 

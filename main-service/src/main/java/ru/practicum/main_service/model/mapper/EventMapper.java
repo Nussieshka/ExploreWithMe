@@ -3,9 +3,7 @@ package ru.practicum.main_service.model.mapper;
 import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
 import ru.practicum.main_service.model.Location;
-import ru.practicum.main_service.model.dto.CreatedEventDTO;
-import ru.practicum.main_service.model.dto.EventDTO;
-import ru.practicum.main_service.model.dto.FullEventDTO;
+import ru.practicum.main_service.model.dto.*;
 import ru.practicum.main_service.model.entity.CategoryEntity;
 import ru.practicum.main_service.model.entity.EventEntity;
 import ru.practicum.main_service.model.entity.UserEntity;
@@ -16,8 +14,14 @@ import java.util.List;
 public interface EventMapper {
     EventMapper INSTANCE = Mappers.getMapper(EventMapper.class);
 
-    @Mapping(target = "location", expression = "java(new Location(entity.getLatitude(), entity.getLongitude()))")
-    FullEventDTO toFullEventDTO(EventEntity entity);
+    @Mapping(target = "location", expression = "java(new Location(event.getLatitude(), event.getLongitude()))")
+    FullEventDTO toFullEventDTO(EventEntity event);
+
+    @Mapping(target = "id", source = "event.id")
+    @Mapping(target = "createdOn", source = "event.createdOn")
+    @Mapping(target = "location", expression = "java(new Location(event.getLatitude(), event.getLongitude()))")
+    @Mapping(target = "topComment", source = "comment")
+    EventDTOWithComment toCommentEventDTO(EventEntity event, CommentDTO comment);
 
     EventDTO toEventDTO(EventEntity entity);
 

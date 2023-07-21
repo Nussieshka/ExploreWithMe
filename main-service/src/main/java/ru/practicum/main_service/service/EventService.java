@@ -17,7 +17,7 @@ public interface EventService {
 
     FullEventDTO addEvent(Long userId, CreatedEventDTO event);
 
-    FullEventDTO getFullEvent(Long userId, Long eventId);
+    EventDTOWithComment getFullEvent(Long userId, Long eventId);
 
     FullEventDTO userEditEvent(Long userId, Long eventId, UpdateEventDTO event);
 
@@ -29,5 +29,5 @@ public interface EventService {
                              LocalDateTime rangeStart, LocalDateTime rangeEnd, Boolean onlyAvailable,
                              SortType sort, Integer from, Integer size, String clientIp, String endpointPath);
 
-    FullEventDTO getEvent(Long id, String clientIp, String endpointPath);
+    EventDTOWithComment getEvent(Long id, String clientIp, String endpointPath);
 }

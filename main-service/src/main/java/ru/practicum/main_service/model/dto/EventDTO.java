@@ -25,7 +25,7 @@ public class EventDTO {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime eventDate;
     private Long id;
-    private EventUserDTO initiator;
+    private ShortUserDTO initiator;
 
     @NotNull
     private Boolean paid;
