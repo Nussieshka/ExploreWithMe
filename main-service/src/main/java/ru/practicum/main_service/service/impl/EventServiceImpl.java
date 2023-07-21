@@ -25,7 +25,6 @@ import ru.practicum.main_service.util.Util;
 
 import javax.transaction.Transactional;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -40,7 +39,6 @@ public class EventServiceImpl implements EventService {
     private final CategoryRepository categoryRepository;
     private final RequestRepository requestRepository;
     private final CommentRepository commentRepository;
-    private final ReplyRepository replyRepository;
 
     private final StatsClient statsClient;
 
@@ -327,173 +325,6 @@ public class EventServiceImpl implements EventService {
              }
              request.setStatus(status);
          }
-    }
-
-    @Override
-    public CommentDTO addCommentToEvent(Long userId, Long eventId, CreatedCommentDTO commentDTO) {
-        if (userId == null || eventId == null) {
-            throw MessageResponseStatusException.getNullIdException();
-        }
-
-        UserEntity user = userRepository.findById(userId).orElseThrow(
-                () -> MessageResponseStatusException.getNotFoundException("User", userId));
-
-        EventEntity event = eventRepository.findById(eventId).orElseThrow(
-                () -> MessageResponseStatusException.getNotFoundException("Event", eventId));
-
-        EventState state = event.getState();
-        if (event.getState() != EventState.PUBLISHED) {
-            throw MessageResponseStatusException.getConflictException("The event not published. Value: " + state);
-        }
-
-        return CommentMapper.INSTANCE.toCommentDTO(
-                commentRepository.save(CommentMapper.INSTANCE.toCommentEntity(commentDTO, event, user)));
-    }
-
-    @Override
-    public CommentDTO editComment(Long userId, Long commentId, CreatedCommentDTO commentDTO) {
-        if (userId == null || commentId == null) {
-            throw MessageResponseStatusException.getNullIdException();
-        }
-
-        CommentEntity comment = commentRepository.findByIdAndUserId(commentId, userId).orElseThrow(
-                () -> MessageResponseStatusException.getNotFoundException("Comment", commentId));
-
-        comment.setMessage(commentDTO.getMessage());
-        comment.setEditedOn(LocalDateTime.now());
-
-        return CommentMapper.INSTANCE.toCommentDTO(commentRepository.save(comment));
-    }
-
-    @Override
-    public CommentDTO likeComment(Long userId, Long commentId) {
-        if (userId == null || commentId == null) {
-            throw MessageResponseStatusException.getNullIdException();
-        }
-
-        UserEntity user = userRepository.findById(userId).orElseThrow(
-                () -> MessageResponseStatusException.getNotFoundException("User", userId));
-
-        CommentEntity comment = commentRepository.findById(commentId).orElseThrow(
-                () -> MessageResponseStatusException.getNotFoundException("Comment", commentId));
-
-        List<UserEntity> likes = new ArrayList<>(comment.getUserLikes());
-
-        if (likes.remove(user)) {
-            comment.setUserLikes(likes);
-            return CommentMapper.INSTANCE.toCommentDTO(commentRepository.save(comment));
-        }
-
-        likes.add(user);
-        comment.setUserLikes(likes);
-
-        return CommentMapper.INSTANCE.toCommentDTO(commentRepository.save(comment));
-    }
-
-    @Override
-    public void removeComment(Long userId, Long commentId) {
-        if (userId == null || commentId == null) {
-            throw MessageResponseStatusException.getNullIdException();
-        }
-
-        CommentEntity comment = commentRepository.findByIdAndUserId(commentId, userId).orElseThrow(
-                () -> MessageResponseStatusException.getNotFoundException("Comment", commentId));
-
-        commentRepository.delete(comment);
-    }
-
-    @Transactional
-    @Override
-    public ReplyDTO addReplyToComment(Long userId, Long commentId, CreatedCommentDTO replyDTO) {
-        if (userId == null || commentId == null) {
-            throw MessageResponseStatusException.getNullIdException();
-        }
-
-        CommentEntity comment = commentRepository.findById(commentId).orElseThrow(
-                () -> MessageResponseStatusException.getNotFoundException("Comment", commentId));
-
-        UserEntity user = userRepository.findById(userId).orElseThrow(
-                () -> MessageResponseStatusException.getNotFoundException("User", userId));
-
-        ReplyEntity reply = CommentMapper.INSTANCE.toReplyEntity(replyDTO, comment, user);
-        comment.getReplies().add(reply);
-
-        return CommentMapper.INSTANCE.toReplyDTO(replyRepository.save(reply));
-    }
-
-    @Override
-    public ReplyDTO editReply(Long userId, Long replyId, CreatedCommentDTO commentDTO) {
-        if (userId == null || replyId == null) {
-            throw MessageResponseStatusException.getNullIdException();
-        }
-
-        ReplyEntity reply = replyRepository.findByIdAndUserId(replyId, userId).orElseThrow(
-                () -> MessageResponseStatusException.getNotFoundException("Reply", replyId));
-
-        reply.setMessage(commentDTO.getMessage());
-        reply.setEditedOn(LocalDateTime.now());
-
-        return CommentMapper.INSTANCE.toReplyDTO(replyRepository.save(reply));
-    }
-
-    @Override
-    public ReplyDTO likeReply(Long userId, Long replyId) {
-        if (userId == null || replyId == null) {
-            throw MessageResponseStatusException.getNullIdException();
-        }
-
-        UserEntity user = userRepository.findById(userId).orElseThrow(
-                () -> MessageResponseStatusException.getNotFoundException("User", userId));
-
-        ReplyEntity reply = replyRepository.findById(replyId).orElseThrow(
-                () -> MessageResponseStatusException.getNotFoundException("Reply", replyId));
-
-        List<UserEntity> likes = reply.getUserLikes();
-
-        if (likes.remove(user)) {
-            return CommentMapper.INSTANCE.toReplyDTO(replyRepository.save(reply));
-        }
-
-        likes.add(user);
-
-        return CommentMapper.INSTANCE.toReplyDTO(replyRepository.save(reply));
-    }
-
-    @Override
-    public void removeReply(Long userId, Long replyId) {
-        if (userId == null || replyId == null) {
-            throw MessageResponseStatusException.getNullIdException();
-        }
-
-        ReplyEntity reply = replyRepository.findByIdAndUserId(replyId, userId).orElseThrow(
-                () -> MessageResponseStatusException.getNotFoundException("Reply", replyId));
-
-
-        replyRepository.delete(reply);
-    }
-
-    @Override
-    public List<ReplyDTO> getReplies(Long commentId, Integer from, Integer size, String clientIp, String endpointPath) {
-        if (commentId == null) {
-            throw MessageResponseStatusException.getNullIdException();
-        }
-
-        statsClient.hit(ExploreWithMe.APP_NAME, endpointPath, clientIp, LocalDateTime.now());
-
-        return CommentMapper.INSTANCE.toReplyDTO(
-                replyRepository.findAllByCommentIdOrderByCreatedOnAsc(commentId, PageRequest.of(from / size, size)));
-    }
-
-    @Override
-    public List<CommentDTO> getComments(Long eventId, Integer from, Integer size, String clientIp, String endpointPath) {
-        if (eventId == null) {
-            throw MessageResponseStatusException.getNullIdException();
-        }
-
-        statsClient.hit(ExploreWithMe.APP_NAME, endpointPath, clientIp, LocalDateTime.now());
-
-        return CommentMapper.INSTANCE.toCommentDTO(
-                commentRepository.findAllByEventIdOrderByUserLikesDesc(eventId, PageRequest.of(from / size, size)));
     }
 
     private CommentEntity getFirstCommentOrNull(Long eventId) {

@@ -44,22 +44,4 @@ public class EventController {
     public ResponseEntity<EventDTOWithComment> getEvent(@PathVariable Long id, HttpServletRequest request) {
         return ResponseEntity.ok(service.getEvent(id, request.getRemoteAddr(), request.getRequestURI()));
     }
-
-    @GetMapping("/{eventId}/comments")
-    public ResponseEntity<List<CommentDTO>> getComments(@PathVariable Long eventId,
-                                                           @RequestParam(defaultValue = "0") Integer from,
-                                                           @RequestParam(defaultValue = "10") Integer size,
-                                                           HttpServletRequest request) {
-        return ResponseEntity.ok(service.getComments(eventId, from, size,
-                request.getRemoteAddr(), request.getRequestURI()));
-    }
-
-    @GetMapping("/comments/{commentId}")
-    public ResponseEntity<List<ReplyDTO>> getReplies(@PathVariable Long commentId,
-                                                          @RequestParam(defaultValue = "0") Integer from,
-                                                          @RequestParam(defaultValue = "10") Integer size,
-                                                          HttpServletRequest request) {
-        return ResponseEntity.ok(service.getReplies(commentId, from, size,
-                request.getRemoteAddr(), request.getRequestURI()));
-    }
 }
